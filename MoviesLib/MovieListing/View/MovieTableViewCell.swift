@@ -21,6 +21,7 @@ class MovieTableViewCell: UITableViewCell {
         labelRating.text = movie.ratingFormatted
         labelSummary.text = movie.summary
         imageViewPoster.image = UIImage(named: movie.imageSmall)
+        imageViewPoster.layer.cornerRadius = 8
     }
     
     
