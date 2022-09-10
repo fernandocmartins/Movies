@@ -20,7 +20,9 @@ class MovieTableViewCell: UITableViewCell {
         labelTitle.text = movie.title
         labelRating.text = movie.ratingFormatted
         labelSummary.text = movie.summary
-        imageViewPoster.image = UIImage(named: movie.imageSmall)
+        if let image = movie.image {
+            imageViewPoster.image = UIImage(data: image)
+        }
         imageViewPoster.layer.cornerRadius = 8
     }
     

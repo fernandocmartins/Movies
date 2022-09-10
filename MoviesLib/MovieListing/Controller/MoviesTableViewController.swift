@@ -6,10 +6,28 @@
 //
 
 import UIKit
+import CoreData
 
-class TableViewController: UITableViewController {
+class MoviesTableViewController: UITableViewController {
 
-    var movies: [Movie] = []
+    lazy var fetchedResutsController: NSFetchedResultsController<Movie> = {
+        let fetchedRequest: NSFetchRequest<Movie> = Movie.fetchRequest()
+        let sortDescriptor = NSSortDescriptor(key: "title", ascending: true)
+        fetchedRequest.sortDescriptors = [sortDescriptor]
+        
+        let fetchedResutsController = NSFetchedResultsController(fetchRequest: fetchedRequest, managedObjectContext: context, sectionNameKeyPath: nil, cacheName: nil)
+        fetchedResutsController.delegate = self
+        
+        return fetchedResutsController
+    }()
+    
+    private let labelNoMovies: UILabel = {
+       let label = UILabel()
+        label.font = .italicSystemFont(ofSize: 14)
+        label.textAlignment = .center
+        label.text = "Sem filmes cadastrados!"
+        return label
+    }()
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -18,21 +36,16 @@ class TableViewController: UITableViewController {
     
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         guard let movieViewController = segue.destination as? MovieViewController,
-              let row = tableView.indexPathForSelectedRow?.row else {return}
+              let indexPath = tableView.indexPathForSelectedRow else {return}
                 
-        movieViewController.movie = movies[row]
+        movieViewController.movie = fetchedResutsController.object(at: indexPath)
     }
     
     //faz a leurura dos filmes
     private func loadMovies() {
-        guard let jsonURL = Bundle.main.url(forResource: "movies",
-                                            withExtension: "json") else { return }
-        do{
-            let data = try Data(contentsOf: jsonURL)
-            let jsonDecoder = JSONDecoder()
-            movies = try jsonDecoder.decode([Movie].self, from: data)
-            movies.forEach{print($0.title)}
-        }catch{
+        do {
+            try fetchedResutsController.performFetch()
+        }catch {
             print(error)
         }
     }
@@ -47,7 +60,9 @@ class TableViewController: UITableViewController {
     //retorna o numero de linhas
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         // #warning Incomplete implementation, return the number of rows
-        return movies.count
+        let count = fetchedResutsController.fetchedObjects?.count ?? 0
+        tableView.backgroundView = count == 0 ? labelNoMovies : nil
+        return count
     }
 
     
@@ -57,7 +72,7 @@ class TableViewController: UITableViewController {
             return UITableViewCell()
         }
 
-        let movie = movies[indexPath.row]
+        let movie = fetchedResutsController.object(at: indexPath)
         cell.configure(with: movie)
         
 
@@ -74,17 +89,16 @@ class TableViewController: UITableViewController {
     }
     */
 
-    /*
+  
     // Override to support editing the table view.
     override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
         if editingStyle == .delete {
-            // Delete the row from the data source
-            tableView.deleteRows(at: [indexPath], with: .fade)
-        } else if editingStyle == .insert {
-            // Create a new instance of the appropriate class, insert it into the array, and add a new row to the table view
-        }    
+            let movie = fetchedResutsController.object(at: indexPath)
+            context.delete(movie)
+            try? context.save()
+        }
     }
-    */
+    
 
     /*
     // Override to support rearranging the table view.
@@ -111,4 +125,10 @@ class TableViewController: UITableViewController {
     }
     */
 
+}
+
+extension MoviesTableViewController: NSFetchedResultsControllerDelegate {
+    func controllerDidChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
+        tableView.reloadData()
+    }
 }

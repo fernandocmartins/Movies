@@ -32,6 +32,12 @@ class MovieViewController: UIViewController {
         setupUI()
     }
     
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        if let movieFormViewController = segue.destination as? MovieFormViewController {
+            movieFormViewController.movie = movie
+        }
+    }
+    
     
     //MARK: - IBActions
     @IBAction func play(_ sender: UIButton) {
@@ -46,9 +52,12 @@ class MovieViewController: UIViewController {
             labelTitle.text = movie.title
             labelRating.text = movie.ratingFormatted
             labelDuration.text = movie.duration
-            labelCategories.text = movie.categories
+            //labelCategories.text = movie.categories
             textViewSummary.text = movie.summary
-            imageViewPoster.image = UIImage(named: movie.image)
+            if let image = movie.image {
+                imageViewPoster.image = UIImage(data: image)
+            }
+            
         }
     }
     
